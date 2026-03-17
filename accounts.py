@@ -1,9 +1,12 @@
-from fastapi import FastAPI,Depends,HTTException
+from fastapi import APIRouter,Depends,HTTPException
 from pydantic import BaseModel,Field
 import database
 import sqlite3 
 from typing import Generator
 from datetime import datetime,timezone
+
+
+router=APIRouter()
 
 
 def get_db()->Generator [sqlite3.Connection,None,None]:
@@ -17,7 +20,7 @@ def get_db()->Generator [sqlite3.Connection,None,None]:
         conn.close()
 
 
-@app.post("/accounts")
+@router.post("/accounts")
 def add_account(id: str,user_id:str,created_at:str,
                 conn:sqlite3.Connection=Depends(get_db)):
 
@@ -26,7 +29,7 @@ def add_account(id: str,user_id:str,created_at:str,
                 conn.execute("""INSERT INTO accounts (id, user_id, 
                                  created_at, updated_at)
                                  VALUES (?,?,?,?)""",
-                   (id,user_id,created_at,now,now))
+                   (id,user_id,now,now))
                 conn.commit()
             except sqlite3.IntegrityError as e : 
                 raise HTTPException(status_code=409,detail=str(e))
@@ -36,12 +39,12 @@ def add_account(id: str,user_id:str,created_at:str,
 
 
 
-@app.put("/accounts/{id}/touch")
+@router.put("/accounts/{id}/touch")
 def touch_account(id: str,created_at:str,conn:sqlite3.Connection=Depends(get_db)):
     now=datetime.now(timezone.utc).isoformat()
     result=conn.execute("""UPDATE accounts SET 
                         updated_at=?
-                        WHERE id= ?""",(id,now))
+                        WHERE id= ?""",(now,id))
     conn.commit()
 
     if result.rowcount == 0:

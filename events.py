@@ -1,9 +1,12 @@
-from fastapi import FastAPI,Depends,HTTException
+from fastapi import APIRouter,Depends,HTTPException
 from pydantic import BaseModel,Field
 import database
 import sqlite3 
 from typing import Generator
 from datetime import datetime,timezone
+
+
+router=APIRouter()
 
 
 def get_db()->Generator [sqlite3.Connection,None,None]:
@@ -17,7 +20,7 @@ def get_db()->Generator [sqlite3.Connection,None,None]:
         conn.close()
 
 
-@app.post("/events")
+@router.post("/events")
 def add_event(id:str,tenant_id:str,event_type:str,
              payload:str,idempotency_key:str,created_at:str
              ,conn:sqlite3.Connection=Depends(get_db)):
@@ -35,7 +38,7 @@ def add_event(id:str,tenant_id:str,event_type:str,
             return {"id": id, "tenant_id":tenant_id,"event_type":event_type,
             "idempotency_key":idempotency_key,"created_at":now}
 
-@app.get("/events/{id}")
+@router.get("/events/{id}")
 def get_event(id:str,conn:sqlite3.Connection=Depends(get_db)):
     row=conn.execute("""SELECT id, tenant_id, 
                     event_type,payload,idempotency_key,created_at 

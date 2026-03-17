@@ -1,9 +1,12 @@
-from fastapi import FastAPI,Depends,HTTException
+from fastapi import APIRouter,Depends,HTTPException
 from pydantic import BaseModel,Field
 import database
 import sqlite3 
 from typing import Generator
 from datetime import datetime,timezone
+
+router=APIRouter()
+
 
 def get_db()->Generator [sqlite3.Connection,None,None]:
     conn=sqlite3.connect('eventscheduler.db')
@@ -15,16 +18,16 @@ def get_db()->Generator [sqlite3.Connection,None,None]:
     finally :
         conn.close()
 
-@app.get("payments/{id}")
+@router.get("/payments/{id}")
 def get_payment(id:str,conn:sqlite3.Connection=Depends(get_db)):
         row=conn.execute("""SELECT id, account_id,amount,made_at 
                             FROM payments WHERE id= ?""",(id,),).fetchone()
         if row is None : 
-            raise HTTPException(status_code=404,ddetail="Payment not found")
+            raise HTTPException(status_code=404,detail="Payment not found")
     
         return dict(row)
 
-@app.post("/payments")
+@router.post("/payments")
 def add_payment(id:str,account_id:str,amount:str,
                  conn:sqlite3.Connection=Depends(get_db)):
             now=datetime.now(timezone.utc).isoformat()
